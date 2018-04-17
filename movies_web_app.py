@@ -20,7 +20,9 @@ def get_db_creds():
 def create_table():
     # Check if table exists or not. Create and populate it only if it does not exist.
     db, username, password, hostname = get_db_creds()
-    table_ddl = 'CREATE TABLE movies(id INT UNSIGNED NOT NULL AUTO_INCREMENT, year TEXT, title TEXT, director TEXT, actor TEXT, release_date TEXT, rating TEXT, PRIMARY KEY (id))'
+    table_ddl = ('CREATE TABLE movies(id INT UNSIGNED NOT NULL AUTO_INCREMENT, '
+                    'year INT UNSIGNED NOT NULL, title TEXT NOT NULL, director TEXT, '
+                    'actor TEXT, release_date TEXT, rating FLOAT, PRIMARY KEY (id))')
 
     cnx = ''
     try:
@@ -34,8 +36,6 @@ def create_table():
     try:
         cur.execute(table_ddl)
         cnx.commit()
-        #add_movie()
-        #populate_data()
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
             print("Table already exists.")
@@ -45,67 +45,80 @@ def create_table():
 
 @app.route('/add_movie', methods=['POST'])
 def add_movie():
-    app.logger.error('INSIDE insert_movie()')
-
-    year = request.form['year']
+    year = int(request.form['year'])
     title = request.form['title']
     director = request.form['director']
     actor = request.form['actor']
     release_date = request.form['release_date']
-    rating = request.form['rating']
+    rating = float(request.form['rating'])
 
     db, username, password, hostname = get_db_creds()
-
     cnx = ''
     try:
         cnx = mysql.connector.connect(user=username, password=password, host=hostname, database=db)
     except Exception as e:
         print(e)
 
-    #movie = "INSERT INTO movies (year, title, director, actor, release_date, rating) VALUES ('%s', '%s', '%s', '%s', '%s', '%s')" % (year, title, director, actor, release_date, rating)
-    movie = "INSERT INTO movies(year, title, director, actor, release_date, rating) VALUES ('2020', 'hardcoded', 'kevin', 'ratnika', 'july', '5')" 
-
+    movie = ("INSERT INTO movies (year, title, director, actor, release_date, rating) VALUES ('%s', '%s', '%s', '%s', '%s', '%s')" 
+                 % (year, title, director, actor, release_date, rating))
+    check = ("SELECT title FROM movies")
+    
+    message = ('Movie %s successfully inserted' % title)
 
     cur = cnx.cursor()
+    cur.execute(check)
+    titles = [dict(title=row[0]) for row in cur.fetchall()]
+    for t in titles:
+        if t['title'].lower() == title.lower():
+            message = ('Movie %s could not be inserted - title already exists' % title)
+            return render_template('index.html', message=message)
+    
     cur.execute(movie)
-    app.logger.error('PAST EXECUTE INSERT COMMAND %s' % title)
     cnx.commit()
     print('Returning from insert_movies()')
-    message = 'Movie successfully inserted'
 
     return render_template('index.html', message=message)
     
 
-'''
-def populate_data():
+@app.route('/update_movie', methods=['POST'])
+def update_movie():
+    year = int(request.form['year'])
+    title = request.form['title']
+    director = request.form['director']
+    actor = request.form['actor']
+    release_date = request.form['release_date']
+    rating = float(request.form['rating'])
 
     db, username, password, hostname = get_db_creds()
-
-    print("Inside populate_data")
-    print("DB: %s" % db)
-    print("Username: %s" % username)
-    print("Password: %s" % password)
-    print("Hostname: %s" % hostname)
-
     cnx = ''
     try:
-        cnx = mysql.connector.connect(user=username, password=password,
-                                       host=hostname,
-                                       database=db)
-    except Exception as exp:
-        print(exp)
+        cnx = mysql.connector.connect(user=username, password=password, host=hostname, database=db)
+    except Exception as e:
+        print(e)
 
+    movie = ("UPDATE movies SET year='%s', title='%s', director='%s', actor='%s', release_date='%s', rating='%s' WHERE title='%s'"
+            % (year, title, director, actor, release_date, rating, title))
+
+    check = ("SELECT title FROM movies")
     cur = cnx.cursor()
-    cur.execute("INSERT INTO message (greeting) values ('Hello, World!')")
+    cur.execute(check)
+    titles = [dict(title=row[0]) for row in cur.fetchall()]
+    for t in titles:
+        if t['title'].lower() == title.lower():
+            cur.execute(movie)
+            message = ('Movie %s successfully updated' % title)
+            break
+        else:
+            message = "Movie %s could not be updated - title doesn't exist" % title
+
     cnx.commit()
-    print("Returning from populate_data")
-    '''
+    print('Returning from insert_movies()')
+    return render_template('index.html', message=message)
 
 
 def query_data(): 
     db, username, password, hostname = get_db_creds()
 
-    app.logger.error("INSIDE query_data")
     print("DB: %s" % db)
     print("Username: %s" % username)
     print("Password: %s" % password)
@@ -122,7 +135,7 @@ def query_data():
     cur = cnx.cursor()
 
     cur.execute("SELECT title FROM movies")
-    entries = [dict(title=row[2]) for row in cur.fetchall()]
+    entries = [dict(title=row[0]) for row in cur.fetchall()]
     app.logger.error('BEFORE RETURNING ENTRIES')
     return entries
 
@@ -169,17 +182,6 @@ def hello():
     #entries = query_data()
     #print("Entries: %s" % entries)
     return render_template('index.html')#, entries=entries)
-
-# @app.route("/")
-def checkout():
-    print("Inside checkout")
-    print("Printing available environment variables")
-    print(os.environ)
-    print("Before displaying checkout.html")
-    entries = query_data()
-#    message = add_movie()
-    print("Entries: %s" % entries)
-    return render_template('index.html', entries=entries)
 
 
 if __name__ == "__main__":

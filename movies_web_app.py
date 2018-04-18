@@ -96,23 +96,56 @@ def update_movie():
     except Exception as e:
         print(e)
 
-    movie = ("UPDATE movies SET year='%s', title='%s', director='%s', actor='%s', release_date='%s', rating='%s' WHERE title='%s'"
+    action = ("UPDATE movies SET year='%s', title='%s', director='%s', actor='%s', release_date='%s', rating='%s' WHERE title='%s'"
             % (year, title, director, actor, release_date, rating, title))
+    message = 'Movie %s could not be updated' % title
 
     check = ("SELECT title FROM movies")
     cur = cnx.cursor()
     cur.execute(check)
     titles = [dict(title=row[0]) for row in cur.fetchall()]
+    if len(titles) <= 0:
+        message = ('Movie %s could not be updated - movie list is empty' % title)
     for t in titles:
         if t['title'].lower() == title.lower():
-            cur.execute(movie)
+            cur.execute(action)
             message = ('Movie %s successfully updated' % title)
             break
         else:
             message = "Movie %s could not be updated - title doesn't exist" % title
 
     cnx.commit()
-    print('Returning from insert_movies()')
+    return render_template('index.html', message=message)
+
+@app.route('/delete_movie', methods=['POST'])
+def delete_movie():
+    title = request.form['delete_title']
+
+    db, username, password, hostname = get_db_creds()
+    cnx = ''
+    try:
+        cnx = mysql.connector.connect(user=username, password=password, host=hostname, database=db)
+    except Exception as e:
+        print(e)
+
+    action = ("DELETE FROM movies WHERE title='%s'" % title)
+    message = 'Movie %s could not be deleted' % title
+
+    check = ("SELECT title FROM movies")
+    cur = cnx.cursor()
+    cur.execute(check)
+    titles = [dict(title=row[0]) for row in cur.fetchall()]
+    if len(titles) <= 0:
+        message = 'Movie %s could not be deleted - movie list is empty' % title
+    for t in titles:
+        if t['title'].lower() == title.lower():
+            cur.execute(action)
+            message = ('Movie %s successfully deleted' % title)
+            break
+        else:
+            message = ("Movie with title '%s' doesn't exist" % title)
+     
+    cnx.commit()
     return render_template('index.html', message=message)
 
 

@@ -17,7 +17,17 @@
     
     <div class="footer">
       <p>Message:</p>
-      <p>{{ message }}</p>
+      {% if message|length > 1 %}
+        {% for m in message %}
+        <div>
+            <div>{{ m.title, m.year, m.actor }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div>
+          <div>{{ message }}</div>
+        </div>
+      {% endif %}
     </div>
 
   <div class="bodycenter">

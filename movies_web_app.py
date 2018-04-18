@@ -149,6 +149,33 @@ def delete_movie():
     return render_template('index.html', message=message)
 
 
+@app.route('/search_movie', methods=['GET', 'POST'])
+def search_movie():
+    actor = request.args.get('search_actor')
+
+    db, username, password, hostname = get_db_creds()
+    cnx = ''
+    try:
+        cnx = mysql.connector.connect(user=username, password=password, host=hostname, database=db)
+    except Exception as e:
+        print(e)
+
+    action = ("SELECT title, year, actor FROM movies WHERE actor='%s'" % actor)
+    message = 'No movies found for actor %s' % actor
+
+    #check = ("SELECT title FROM movies")
+    cur = cnx.cursor()
+    cur.execute(action)
+    movies = [dict(title=row[0], year=row[1], actor=row[2]) for row in cur.fetchall()]
+    if len(movies) <= 0:
+        message = 'No movies could be found - movie list is empty'
+    else:
+        message = movies
+     
+    cnx.commit()
+    return render_template('index.html', message=message)
+
+
 def query_data(): 
     db, username, password, hostname = get_db_creds()
 
@@ -180,31 +207,6 @@ try:
 except Exception as exp:
     print("Got exception %s" % exp)
     conn = None
-
-'''
-@app.route('/add_to_db', methods=['POST'])
-def add_to_db():
-    print("Received request.")
-    print(request.form['message'])
-    msg = request.form['message']
-
-    db, username, password, hostname = get_db_creds()
-
-    cnx = ''
-    try:
-        cnx = mysql.connector.connect(user=username, password=password,
-                                      host=hostname,
-                                      database=db)
-    except Exception as exp:
-        print(exp)
-        #import MySQLdb
-        #cnx = MySQLdb.connect(unix_socket=hostname, user=username, passwd=password, db=db)
-
-    cur = cnx.cursor()
-    cur.execute("INSERT INTO message (greeting) values ('" + msg + "')")
-    cnx.commit()
-    return hello()
-    '''
 
 
 @app.route("/")

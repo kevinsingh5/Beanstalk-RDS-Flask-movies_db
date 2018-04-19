@@ -1,5 +1,5 @@
-import os
-import time
+import os, time, operator
+from operator import itemgetter
 
 from flask import Flask, render_template, request
 import mysql.connector
@@ -149,7 +149,7 @@ def delete_movie():
     return render_template('index.html', message=message)
 
 
-@app.route('/search_movie', methods=['GET', 'POST'])
+@app.route('/search_movie', methods=['GET'])
 def search_movie():
     actor = request.args.get('search_actor')
 
@@ -175,6 +175,45 @@ def search_movie():
     cnx.commit()
     return render_template('index.html', message=message)
 
+@app.route('/highest_rating', methods=['GET'])
+def highest_rating():
+    db, username, password, hostname = get_db_creds()
+    cnx = ''
+    try:
+        cnx = mysql.connector.connect(user=username, password=password, host=hostname, database=db)
+    except Exception as e:
+        print(e)
+
+    action = ("SELECT title, year, actor, director, rating FROM movies")
+    message = 'No movies could be found'
+
+    cur = cnx.cursor()
+    cur.execute(action)
+    movies = [dict(title=row[0], year=row[1], actor=row[2], director=row[3], rating=row[4]) for row in cur.fetchall()]
+    if len(movies) <= 0:
+        message = 'No movies could be found - movie list is empty'
+    else:
+        message = []
+        ordered_list = sorted(movies, key=itemgetter('rating'))
+        highest = ordered_list.pop()
+        message.append(highest)
+        rating = highest['rating']
+        app.logger.error("HIGHEST: %s AND RATING %s" % (highest, rating))
+        # for i in ordered_list:
+        #     if i['rating'] == rating:
+        #         message.append(i)
+        i = 0
+        length = len(ordered_list)
+        while i < length:
+            item = ordered_list.pop()
+            app.logger.error("ITEM: %s" % item)
+            if item['rating'] == rating:
+                app.logger.error("RATING: %s" % item['rating'])
+                message.append(item)
+            i = i + 1
+    app.logger.error('MESSAGE = %s' % message)
+    cnx.commit()
+    return render_template('index.html', message=message)
 
 def query_data(): 
     db, username, password, hostname = get_db_creds()

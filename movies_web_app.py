@@ -198,22 +198,18 @@ def highest_rating():
         highest = ordered_list.pop()
         message.append(highest)
         rating = highest['rating']
-        app.logger.error("HIGHEST: %s AND RATING %s" % (highest, rating))
-        # for i in ordered_list:
-        #     if i['rating'] == rating:
-        #         message.append(i)
+
         i = 0
         length = len(ordered_list)
         while i < length:
             item = ordered_list.pop()
-            app.logger.error("ITEM: %s" % item)
             if item['rating'] == rating:
-                app.logger.error("RATING: %s" % item['rating'])
                 message.append(item)
             i = i + 1
-    app.logger.error('MESSAGE = %s' % message)
+    
     cnx.commit()
     return render_template('index.html', message=message)
+
 
 def query_data(): 
     db, username, password, hostname = get_db_creds()

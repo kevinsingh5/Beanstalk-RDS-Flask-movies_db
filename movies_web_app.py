@@ -164,16 +164,18 @@ def search_movie():
     message = 'No movies found for actor %s' % actor
 
     #check = ("SELECT title FROM movies")
+    results = None
     cur = cnx.cursor()
     cur.execute(action)
     movies = [dict(title=row[0], year=row[1], actor=row[2]) for row in cur.fetchall()]
     if len(movies) <= 0:
-        message = 'No movies could be found - movie list is empty'
+        message = 'No movies could be found for actor %s' % actor
     else:
-        message = movies
+        message = None
+        results = movies
      
     cnx.commit()
-    return render_template('index.html', message=message)
+    return render_template('index.html', results=results, message=message)
 
 @app.route('/highest_rating', methods=['GET'])
 def highest_rating():
@@ -187,16 +189,18 @@ def highest_rating():
     action = ("SELECT title, year, actor, director, rating FROM movies")
     message = 'No movies could be found'
 
+    listings = None
     cur = cnx.cursor()
     cur.execute(action)
     movies = [dict(title=row[0], year=row[1], actor=row[2], director=row[3], rating=row[4]) for row in cur.fetchall()]
     if len(movies) <= 0:
         message = 'No movies could be found - movie list is empty'
     else:
-        message = []
+        message = None
+        listings = []
         ordered_list = sorted(movies, key=itemgetter('rating'))
         highest = ordered_list.pop()
-        message.append(highest)
+        listings.append(highest)
         rating = highest['rating']
 
         i = 0
@@ -204,11 +208,11 @@ def highest_rating():
         while i < length:
             item = ordered_list.pop()
             if item['rating'] == rating:
-                message.append(item)
+                listings.append(item)
             i = i + 1
     
     cnx.commit()
-    return render_template('index.html', message=message)
+    return render_template('index.html', listings=listings, message=message)
 
 
 @app.route('/lowest_rating', methods=['GET'])
@@ -223,16 +227,18 @@ def lowest_rating():
     action = ("SELECT title, year, actor, director, rating FROM movies")
     message = 'No movies could be found'
 
+    listings = None
     cur = cnx.cursor()
     cur.execute(action)
     movies = [dict(title=row[0], year=row[1], actor=row[2], director=row[3], rating=row[4]) for row in cur.fetchall()]
     if len(movies) <= 0:
         message = 'No movies could be found - movie list is empty'
     else:
-        message = []
+        message = None
+        listings = []
         ordered_list = sorted(movies, key=itemgetter('rating'), reverse=True)
         lowest = ordered_list.pop()
-        message.append(lowest)
+        listings.append(lowest)
         rating = lowest['rating']
 
         i = 0
@@ -240,11 +246,12 @@ def lowest_rating():
         while i < length:
             item = ordered_list.pop()
             if item['rating'] == rating:
-                message.append(item)
+                listings.append(item)
             i = i + 1
     
     cnx.commit()
-    return render_template('index.html', message=message)
+    return render_template('index.html', listings=listings, message=message)
+
 
 def query_data(): 
     db, username, password, hostname = get_db_creds()

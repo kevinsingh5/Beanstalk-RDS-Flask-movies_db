@@ -17,18 +17,25 @@
     
     <div class="footer">
       <p>Message:</p>
+      {% if message %}
+      <div>
         <div>{{ message }}</div>
-      <!-- {% if message|length > 1 %}
-        {% for m in message %}
+      </div>
+      {% elif results %}
+        {% for r in results %}
         <div>
-            <div>{{ m.title, m.year, m.actor }}</div>
+            <div>[{{ r.title, r.year, r.actor }}]</div>
         </div>
         {% endfor %}
+      {% elif listings %}
+        {% for l in listings %}
+          <div>
+            <div>[{{ l.title, l.year, l.actor, l.director, l.rating }}]</div>
+          </div>
+        {% endfor %}
       {% else %}
-        <div>
-          <div>{{ message }}</div>
-        </div>
-      {% endif %} -->
+          <div> </div>
+      {% endif %}
     </div>
 
   <div class="bodycenter">

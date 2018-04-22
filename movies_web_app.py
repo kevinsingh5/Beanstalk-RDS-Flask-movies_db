@@ -5,8 +5,8 @@ from flask import Flask, render_template, request
 import mysql.connector
 from mysql.connector import errorcode
 
-movies_web_app = Flask(__name__)
-app = movies_web_app
+application = Flask(__name__)
+app = application
 
 
 def get_db_creds():
